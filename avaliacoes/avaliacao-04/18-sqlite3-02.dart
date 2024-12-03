@@ -73,7 +73,7 @@ void main() async {
   
   final db = AlunoDatabase.instance;
   
-  await db.insertAluno(Aluno(nome: 'Matheus ', dataNascimento: '2007-01-12'));
+  await db.insertAluno(Aluno(nome: 'Matheus ', dataNascimento: '01/12/2006'));
 
   // Listar todos os alunos
   final alunos = await db.getAllAlunos();
