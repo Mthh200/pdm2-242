@@ -1,14 +1,12 @@
-
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
-
 
 class Aluno {
   int? id;
-  String? nome;
-  String? dataNascimento;
+  String nome;
+  String dataNascimento;
 
-  Aluno({this.id, this.nome, this.dataNascimento});
+  Aluno({this.id, required this.nome, required this.dataNascimento});
 
   Map<String, dynamic> toMap() {
     return {
@@ -17,124 +15,69 @@ class Aluno {
       'data_nascimento': dataNascimento,
     };
   }
-
-  // Método toString para melhorar a impressão do objeto Aluno
-  
 }
-
 
 class AlunoDatabase {
   static final AlunoDatabase instance = AlunoDatabase._init();
 
-  static Database? _database; // Variável pode ser nula
+  static Database? _database;
 
   AlunoDatabase._init();
 
   Future<Database> get database async {
-    if (_database != null) return _database!; // Verificação de nulidade
-
+    if (_database != null) return _database!;
     _database = await _initDB('aluno.db');
     return _database!;
   }
 
   Future<Database> _initDB(String dbName) async {
-    final dbPath = await getDatabasesPath();
+    final dbPath = await databaseFactoryFfi.getDatabasesPath();
     final path = join(dbPath, dbName);
 
-    return await openDatabase(
+    return await databaseFactoryFfi.openDatabase(
       path,
-      version: 1,
-      onCreate: _createDB,
+      options: OpenDatabaseOptions(
+        version: 1,
+        onCreate: (db, version) async {
+          await db.execute('''
+            CREATE TABLE TB_ALUNOS (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              nome TEXT NOT NULL,
+              data_nascimento TEXT NOT NULL
+            )
+          ''');
+        },
+      ),
     );
-  }
-
-  Future<void> _createDB(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE TB_ALUNOS (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        data_nascimento TEXT NOT NULL
-      )
-    ''');
   }
 
   Future<int> insertAluno(Aluno aluno) async {
     final db = await database;
-    return await db.insert('TB_ALUNOS', aluno.toMap());
-  }
-
-  Future<Aluno?> getAluno(int id) async {
-    final db = await database;
-    final maps = await db.query(
-      'TB_ALUNOS',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-
-    if (maps.isEmpty) return null;
-
-    return Aluno(
-      id: maps.first['id'] as int?,
-      nome: maps.first['nome'] as String?,
-      dataNascimento: maps.first['data_nascimento'] as String?,
-    );
+    return db.insert('TB_ALUNOS', aluno.toMap());
   }
 
   Future<List<Aluno>> getAllAlunos() async {
     final db = await database;
-    final maps = await db.query('TB_ALUNOS');
-
-    return List.generate(maps.length, (i) {
-      return Aluno(
-        id: maps[i]['id'] as int?,
-        nome: maps[i]['nome'] as String?,
-        dataNascimento: maps[i]['data_nascimento'] as String?,
-      );
-    });
-  }
-
-  Future<int> updateAluno(Aluno aluno) async {
-    final db = await database;
-    return await db.update(
-      'TB_ALUNOS',
-      aluno.toMap(),
-      where: 'id = ?',
-      whereArgs: [aluno.id],
-    );
-  }
-
-  Future<int> deleteAluno(int id) async {
-    final db = await database;
-    return await db.delete(
-      'TB_ALUNOS',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final result = await db.query('TB_ALUNOS');
+    return result.map((map) => Aluno(
+      id: map['id'] as int?,
+      nome: map['nome'] as String,
+      dataNascimento: map['data_nascimento'] as String,
+    )).toList();
   }
 }
 
 void main() async {
-  // Inicializar o banco de dados
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+  
   final db = AlunoDatabase.instance;
+  
+  await db.insertAluno(Aluno(nome: 'Matheus ', dataNascimento: '2007-01-12'));
 
-  // Inserir um aluno
-  final aluno = Aluno(nome: 'João', dataNascimento: '2000-01-01');
-  int alunoId = await db.insertAluno(aluno);
-
-  // Buscar um aluno pelo ID
-  Aluno? retrievedAluno = await db.getAluno(alunoId);
-  print('Aluno recuperado: $retrievedAluno');
-
-  // Atualizar os dados de um aluno
-  if (retrievedAluno != null) {
-    retrievedAluno.nome = 'João da Silva';
-    await db.updateAluno(retrievedAluno);
+  // Listar todos os alunos
+  final alunos = await db.getAllAlunos();
+  for (var aluno in alunos) {
+    print('Aluno: ${aluno.nome}, Nascimento: ${aluno.dataNascimento}');
   }
-
-  // Buscar todos os alunos
-  List<Aluno> alunos = await db.getAllAlunos();
-  print('Todos os alunos: $alunos');
-
-  // Deletar um aluno
-  await db.deleteAluno(alunoId);
 }
