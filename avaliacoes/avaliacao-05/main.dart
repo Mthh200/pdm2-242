@@ -3,14 +3,14 @@ import 'package:mailer/smtp_server/gmail.dart';
 
 main() async {
   // Configura as credenciais SMTP do Gmail
-  final smtpServer = gmail('', '');
+  final smtpServer = gmail('email', 'senha');
 
   // Cria uma mensagem de e-mail
   final message = Message()
-    ..from = Address('', '')
-    ..recipients.add('')
-    ..subject = 'Atividade 05'
-    ..text = 'Email Dart SMTP';
+    ..from = Address('email', 'Matheus Pereira Menezes')
+    ..recipients.add('destinatario')
+    ..subject = 'EMAIL ENVIADO COM DART SMTP'
+    ..text = 'LOREM IPSUM ASDASFAJSGDFAHSKHDFUYASGDKFH JXSBCVA GFAGSDJHFBAHSDGFADSUFGASKJHD GASDFJGAJSDFASGDFHJG ASDGFJASHDGFJHSADJFG ASGDFJHSADGFJASGDFJHAGSD FJAHSGDFJAGSDJFHAGSDFAG SJHGDFAJSGDFJAS';
 
   try {
     // Envia o e-mail usando o servidor SMTP do Gmail
