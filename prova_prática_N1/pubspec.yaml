@@ -1,0 +1,6 @@
+name: RequisicaoCEP
+description: Consumindo uma API para retornar um CEP.
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
